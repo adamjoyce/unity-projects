@@ -9,35 +9,46 @@ public class SlotMachine : MonoBehaviour {
 
   private const int numberOfSlots = 3;
 
-  private string[] slotOutput;
-
   // Update is called once per frame.
-  public void SpinSlots() {
+  public string[] SpinSlots() {
+    string[] slotsResults = new string[3];
+
     int rand;
     for (int i = 0; i < numberOfSlots; i++) {
-      rand = Random.Range(0, numberOfSlots);
+      rand = Random.Range(0, numberOfSlots - 1);
 
       if (i == 0)
-        slotOutput[i] = levels[rand];
+        slotsResults[i] = levels[rand];
       else if (i == 1)
-        slotOutput[i] = weapons[rand];
+        slotsResults[i] = weapons[rand];
       else
-        slotOutput[i] = enemies[rand];
+        slotsResults[i] = enemies[rand];
     }
 
     //for (int i = 0; i < numberOfSlots; i++) {
-      //Debug.Log(slotOutput[i] + " ");
+    //Debug.Log(slotOutput[i] + " ");
     //}
     //Debug.Log("\n");
+
+    return slotsResults;
   }
 
-  // Get the slot output parameters.
-  public string[] GetSlotOutput() {
-    return slotOutput;
-  }
+  // Update.
+  private void Update() {
+    if (Input.GetMouseButtonDown(0)) {
+      RaycastHit hit;
+      if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit)) {
+        if (hit.collider.tag == "Lever") {
+          // Lever animation...
+          Debug.Log("Lever Animation");
 
-  // Use this for initialization.
-  private void Start () {
-    slotOutput = new string[numberOfSlots];
-	}
+          // Spin Slots.
+          string[] results = SpinSlots();
+          
+          // Slots animation...
+
+        }
+      }
+    }
+  }
 }
