@@ -5,52 +5,67 @@ public class SlotMachine : MonoBehaviour {
 
   public float animationSpeed = 1.0f;
 
-  private readonly string[] levels = { "fire", "water", "plat" };
-  private readonly string[] weapons = { "knife", "handgun", "launcher" };
-  private readonly string[] enemies = { "golem", "duck", "bird" };
+  private static readonly string[] levels = { "Fire", "Water", "Plat" };
+  private static readonly string[] weapons = { "Knife", "Gun", "Rocket" };
+  private static readonly string[] enemies = { "Golem", "Duck", "Bird" };
+
+  private static readonly string[][] slots = { levels, weapons, enemies };
+
+  private GameObject[] levelObjects;
+  private GameObject[] weaponObjects;
+  private GameObject[] enemyObjects;
 
   private const int numberOfSlots = 3;
 
-  private float time = 0.0f;
+  private bool slotsAnimation = false;
 
-  GameObject knife;
-  GameObject gun;
-  GameObject rocket;
+  private int slotVisibleIndex = 0;
 
-  // Update is called once per frame.
-  public string[] SpinSlots() {
-    string[] slotsResults = new string[3];
+  private int frameCount = 0;
+  public int frameInterval = 10;
 
-    int rand;
-    for (int i = 0; i < numberOfSlots; i++) {
-      rand = Random.Range(0, numberOfSlots - 1);
+  private float slotsTimer = 0.0f;
+  private const float slowTime = 7.0f;
+  private const float slowTimeInterval = 3.0f;
+  private const float stopTIme = 18.0f;
 
+  // Initilisation / assignment.
+  private void Start() {
+    levelObjects = new GameObject[levels.Length];
+    weaponObjects = new GameObject[weapons.Length];
+    enemyObjects = new GameObject[enemies.Length];
+
+    //int randSlot1 = Random.Range(0, levels.Length);
+    //int randSlot2 = Random.Range(0, weapons.Length);
+    //int randSlot3 = Random.Range(0, enemies.Length);
+
+    /*for (int i = 0; i < levels.Length; i++) {
+      levelObjects[i] = GameObject.Find(levels[i]);
+      Debug.Log(levels[i]);
       if (i == 0)
-        slotsResults[i] = levels[rand];
-      else if (i == 1)
-        slotsResults[i] = weapons[rand];
+        levelObjects[i].GetComponent<SpriteRenderer>().enabled = true;
       else
-        slotsResults[i] = enemies[rand];
+        levelObjects[i].GetComponent<SpriteRenderer>().enabled = false;
+    }*/
+
+    for (int i = 0; i < weapons.Length; i++) {
+      weaponObjects[i] = GameObject.Find(weapons[i]);
+      if (i == 0)
+        weaponObjects[i].GetComponent<SpriteRenderer>().enabled = true;
+      else
+        weaponObjects[i].GetComponent<SpriteRenderer>().enabled = false;
     }
 
-    //for (int i = 0; i < numberOfSlots; i++) {
-    //Debug.Log(slotOutput[i] + " ");
-    //}
-    //Debug.Log("\n");
-
-    return slotsResults;
+    /*for (int i = 0; i < enemies.Length; i++) {
+      enemyObjects[i] = GameObject.Find(enemies[i]);
+      if (i == 0)
+        enemyObjects[i].GetComponent<SpriteRenderer>().enabled = true;
+      else
+        enemyObjects[i].GetComponent<SpriteRenderer>().enabled = false;
+    }*/
   }
 
-  private void Start() {
-    knife = GameObject.Find("knife");
-    gun = GameObject.Find("gun");
-    rocket = GameObject.Find("rocket");
-    knife.GetComponent<SpriteRenderer>().enabled = true;
-    gun.GetComponent<SpriteRenderer>().enabled = false;
-    rocket.GetComponent<SpriteRenderer>().enabled = false;
-  }
-
-  // Update.
+  // Update is called once per frame.
   private void Update() {
     if (Input.GetMouseButtonDown(0)) {
       RaycastHit hit;
@@ -63,24 +78,74 @@ public class SlotMachine : MonoBehaviour {
           string[] results = SpinSlots();
 
           // Slots animation...
+          slotsAnimation = true;
         }
       }
     }
 
-    if (knife.GetComponent<SpriteRenderer>().enabled == true) {
-      knife.GetComponent<SpriteRenderer>().enabled = false;
-      gun.GetComponent<SpriteRenderer>().enabled = true;
+    if (slotsAnimation) {
+      slotsTimer += Time.deltaTime;
+
+      if (slotsTimer >= slowTime && slotsTimer < slowTime + slowTimeInterval) {
+        frameInterval = 15;
+      } else if (slotsTimer >= slowTime + slowTimeInterval && slotsTimer < slowTime + slowTimeInterval * 2) {
+        frameInterval = 20;
+      } else if (slotsTimer >= slowTime + slowTimeInterval * 2) {
+        frameInterval = 25;
+      }
+
+      if (slotsTimer >= stopTIme) {
+        slotsTimer = 0.0f;
+        slotsAnimation = false;
+        ShowResults();
+      }
+
+      if (frameCount % frameInterval == 0) {
+        AnimateSlots();
+      }
+
+      frameCount++;
+    }
+  }
+
+  // 
+  private string[] SpinSlots() {
+    string[] slotsResults = new string[slots.Length];
+
+    int rand;
+    for (int i = 0; i < slots.Length; i++) {
+      rand = Random.Range(0, slots[i].Length - 1);
+      slotsResults[i] = slots[i][rand];
     }
 
-    if (gun.GetComponent<SpriteRenderer>().enabled == true) {
-      gun.GetComponent<SpriteRenderer>().enabled = false;
-      rocket.GetComponent<SpriteRenderer>().enabled = true;
+    //for (int i = 0; i < slotsResults.Length; i++) {
+    //Debug.Log(slotsResults[i] + " ");
+    //}
+    //Debug.Log("\n");
+
+    return slotsResults;
+  }
+
+  // Show results of the spin.
+  private void ShowResults() {
+
+  }
+
+  // Animation logic.
+  private void AnimateSlots() {
+    int nextIndex = slotVisibleIndex + 1;
+    if (weaponObjects[slotVisibleIndex].GetComponent<SpriteRenderer>().enabled) {
+      if (slotVisibleIndex == weaponObjects.Length - 1) {
+        nextIndex = 0;
+      }
+      weaponObjects[slotVisibleIndex].GetComponent<SpriteRenderer>().enabled = false;
+      weaponObjects[nextIndex].GetComponent<SpriteRenderer>().enabled = true;
     }
 
-    if (rocket.GetComponent<SpriteRenderer>().enabled == true) {
-      rocket.GetComponent<SpriteRenderer>().enabled = false;
-      knife.GetComponent<SpriteRenderer>().enabled = true;
-    }
+    if (slotVisibleIndex == weaponObjects.Length - 1)
+      slotVisibleIndex = 0;
+    else
+      slotVisibleIndex++;
   }
 
   IEnumerator Wait() {
